@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poisson Distribution Explorer</title>
+    <style>
+        :root {
+            --color-bg-base: #0f172a;
+            --color-bg-elevated: #020617;
+            --color-bg-surface: #1e293b;
+            --color-bg-muted: #334155;
+            --color-text-primary: #f1f5f9;
+            --color-text-secondary: #cbd5e1;
+            --color-text-muted: #94a3b8;
+            --color-text-accent: #38bdf8;
+            --color-primary: #38bdf8;
+            --color-primary-hover: #0ea5e9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--color-bg-base);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--color-primary);
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--color-bg-muted);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            color: var(--color-text-secondary);
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            color: var(--color-primary);
+        }
+
+        .tab.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--color-bg-surface);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            color: var(--color-primary);
+            margin-bottom: 16px;
+        }
+
+        .card h3 {
+            color: var(--color-text-accent);
+            margin-top: 20px;
+            margin-bottom: 12px;
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: var(--color-bg-muted);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            display: inline-block;
+            background: var(--color-bg-elevated);
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: var(--color-primary);
+            font-weight: bold;
+            margin-left: 12px;
+        }
+
+        canvas {
+            max-width: 100%;
+            background: var(--color-bg-elevated);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .example-card {
+            background: var(--color-bg-elevated);
+            padding: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .example-card:hover {
+            border-color: var(--color-primary);
+            transform: translateY(-4px);
+        }
+
+        .example-card h4 {
+            color: var(--color-primary);
+            margin-bottom: 8px;
+        }
+
+        .example-card p {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+        }
+
+        .formula {
+            background: var(--color-bg-elevated);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 16px 0;
+            text-align: center;
+            font-size: 18px;
+            color: var(--color-text-secondary);
+        }
+
+        .highlight {
+            color: var(--color-primary);
+            font-weight: bold;
+        }
+
+        .properties-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .properties-list li {
+            background: var(--color-bg-elevated);
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .quiz-option {
+            background: var(--color-bg-elevated);
+            padding: 16px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--color-primary);
+        }
+
+        .quiz-option.correct {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .quiz-option.incorrect {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .feedback {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid #10b981;
+            color: #10b981;
+        }
+
+        .feedback.incorrect {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+        }
+
+        .btn {
+            background: var(--color-primary);
+            color: var(--color-bg-base);
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--color-primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: var(--color-bg-elevated);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-box .label {
+            color: var(--color-text-muted);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .stat-box .value {
+            color: var(--color-primary);
+            font-size: 28px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Poisson Distribution Explorer</h1>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="intro">Introduction</button>
+            <button class="tab" data-tab="visual">Interactive Visualization</button>
+            <button class="tab" data-tab="examples">Real-World Examples</button>
+            <button class="tab" data-tab="properties">Properties</button>
+            <button class="tab" data-tab="quiz">Test Your Knowledge</button>
+        </div>
+
+        <div id="intro" class="tab-content active">
+            <div class="card">
+                <h2>What is the Poisson Distribution?</h2>
+                <p>The <span class="highlight">Poisson distribution</span> is a probability distribution that helps us answer questions like:</p>
+                <ul style="margin: 16px 0 16px 24px; color: var(--color-text-secondary);">
+                    <li>How many customers will visit my store in the next hour?</li>
+                    <li>How many emails will I receive today?</li>
+                    <li>How many meteor strikes will hit Earth this year?</li>
+                    <li>How many typos are in a 10-page document?</li>
+                </ul>
+                
+                <h3>Key Concept: Counting Rare Events Over Time or Space</h3>
+                <p style="color: var(--color-text-secondary); margin-top: 12px;">
+                    Imagine you're running a coffee shop. On average, you get <span class="highlight">3 customers per hour</span>. 
+                    But that's just an average! Sometimes you might get 1, sometimes 5, rarely 8 or more. 
+                    The Poisson distribution tells you the <span class="highlight">probability of getting exactly k customers</span> 
+                    in that hour.
+                </p>
+            </div>
+
+            <div class="card">
+                <h2>When to Use Poisson Distribution?</h2>
+                <ul class="properties-list">
+                    <li><strong>Events are independent</strong> - One customer arriving doesn't affect whether another arrives</li>
+                    <li><strong>Events happen at a constant average rate</strong> - You average 3 customers/hour consistently</li>
+                    <li><strong>You're counting discrete events</strong> - You can count 0, 1, 2, 3... customers (not 2.5!)</li>
+                    <li><strong>Two events can't happen at exactly the same instant</strong> - Each arrival is distinct</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>The Formula (Don't Worry, We'll Make It Simple!)</h2>
+                <div class="formula">
+                    P(X = k) = (λ<sup>k</sup> × e<sup>-λ</sup>) / k!
+                </div>
+                <p style="color: var(--color-text-secondary); margin-top: 16px;">Where:</p>
+                <ul style="margin: 12px 0 0 24px; color: var(--color-text-secondary);">
+                    <li><strong>k</strong> = the number of events you're interested in (e.g., 5 customers)</li>
+                    <li><strong>λ (lambda)</strong> = the average rate (e.g., 3 customers per hour)</li>
+                    <li><strong>e</strong> = mathematical constant (≈ 2.718)</li>
+                    <li><strong>k!</strong> = k factorial (e.g., 5! = 5 × 4 × 3 × 2 × 1 = 120)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="visual" class="tab-content">
+            <div class="card">
+                <h2>Interactive Visualization</h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: 24px;">
+                    Adjust the <span class="highlight">average rate (λ)</span> below to see how the probability distribution changes!
+                </p>
+                
+                <div class="control-group">
+                    <label>
+                        Average Rate (λ): <span class="value-display" id="lambdaValue">3</span>
+                    </label>
+                    <input type="range" id="lambdaSlider" min="0.5" max="20" step="0.5" value="3">
+                </div>
+
+                <canvas id="distributionChart" width="800" height="400"></canvas>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="label">Mean (Expected Value)</div>
+                        <div class="value" id="meanValue">3.00</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">Variance</div>
+                        <div class="value" id="varianceValue">3.00</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">Standard Deviation</div>
+                        <div class="value" id="stdDevValue">1.73</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">Most Likely Value</div>
+                        <div class="value" id="modeValue">3</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>What Do You Notice?</h2>
+                <ul class="properties-list">
+                    <li><strong>Small λ (< 5):</strong> The distribution is right-skewed (tail on the right). Most values cluster near zero.</li>
+                    <li><strong>Medium λ (5-10):</strong> The distribution becomes more symmetric and bell-shaped.</li>
+                    <li><strong>Large λ (> 10):</strong> The distribution looks almost like a normal (bell) curve!</li>
+                    <li><strong>The mean equals the variance:</strong> Both equal λ. This is unique to the Poisson distribution!</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="examples" class="tab-content">
+            <div class="card">
+                <h2>Real-World Examples</h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: 20px;">
+                    Click on any example to see its Poisson distribution!
+                </p>
+                
+                <div class="example-grid">
+                    <div class="example-card" data-lambda="2" data-title="Website Visitors">
+                        <h4>📊 Website Traffic</h4>
+                        <p>A blog receives an average of 2 visitors per minute. What's the probability of getting exactly 4 visitors in the next minute?</p>
+                    </div>
+                    
+                    <div class="example-card" data-lambda="10" data-title="Call Center">
+                        <h4>📞 Call Center</h4>
+                        <p>A call center receives an average of 10 calls per hour. How many calls should they expect in the next hour?</p>
+                    </div>
+                    
+                    <div class="example-card" data-lambda="1" data-title="Network Failures">
+                        <h4>🌐 Network Failures</h4>
+                        <p>A company experiences 1 network failure per week on average. What's the probability of 0 failures next week?</p>
+                    </div>
+                    
+                    <div class="example-card" data-lambda="30" data-title="Restaurant Customers">
+                        <h4>🍽️ Restaurant Traffic</h4>
+                        <p>A restaurant serves 30 customers per hour on average. How many should they staff for during lunch rush?</p>
+                    </div>
+                    
+                    <div class="example-card" data-lambda="0.5" data-title="Meteor Strikes">
+                        <h4>☄️ Meteor Strikes</h4>
+                        <p>Large meteors (>1m) strike Earth about 0.5 times per year on average. Probability of 2 strikes this year?</p>
+                    </div>
+                    
+                    <div class="example-card" data-lambda="5" data-title="Email Arrivals">
+                        <h4>✉️ Email Arrivals</h4>
+                        <p>You receive an average of 5 work emails per hour. What's the chance of getting more than 8 in an hour?</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="properties" class="tab-content">
+            <div class="card">
+                <h2>Special Properties of the Poisson Distribution</h2>
+                
+                <h3>1. Mean = Variance = λ</h3>
+                <p style="color: var(--color-text-secondary);">
+                    This is unique! If the average is 5, the variance is also 5. This makes calculations simple 
+                    and helps identify if data follows a Poisson distribution.
+                </p>
+                
+                <h3>2. Additive Property</h3>
+                <p style="color: var(--color-text-secondary);">
+                    If you have two independent Poisson processes, you can add them! 
+                    If store A gets 3 customers/hour and store B gets 5 customers/hour, 
+                    the total follows Poisson(8).
+                </p>
+                
+                <h3>3. Approximates Binomial Distribution</h3>
+                <p style="color: var(--color-text-secondary);">
+                    When you have many trials (n) with a small probability (p), the Binomial distribution 
+                    approximates a Poisson distribution with λ = n × p.
+                </p>
+                
+                <h3>4. Memoryless for Arrival Times</h3>
+                <p style="color: var(--color-text-secondary);">
+                    The time between events follows an exponential distribution. The fact that no customer 
+                    arrived in the last 5 minutes doesn't change the probability of one arriving in the next 5 minutes.
+                </p>
+            </div>
+
+            <div class="card">
+                <h2>Shape Characteristics</h2>
+                <ul class="properties-list">
+                    <li><strong>Always discrete:</strong> You can only have whole number outcomes (0, 1, 2, 3...)</li>
+                    <li><strong>Always non-negative:</strong> Probabilities are always ≥ 0</li>
+                    <li><strong>Unlimited upper bound:</strong> Theoretically, k can go to infinity (but probabilities get tiny)</li>
+                    <li><strong>Mode (most likely value):</strong> Usually floor(λ) or floor(λ) - 1</li>
+                    <li><strong>Skewness decreases as λ increases:</strong> Becomes more symmetric with larger λ</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>Question 1: Understanding the Basics</h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    A bakery sells an average of 4 cakes per day. Which distribution would best model the number of cakes sold tomorrow?
+                </p>
+                
+                <div class="quiz-option" data-question="1" data-correct="true">
+                    Poisson distribution with λ = 4
+                </div>
+                <div class="quiz-option" data-question="1" data-correct="false">
+                    Normal distribution with mean = 4
+                </div>
+                <div class="quiz-option" data-question="1" data-correct="false">
+                    Binomial distribution with n = 4
+                </div>
+                <div class="quiz-option" data-question="1" data-correct="false">
+                    Uniform distribution
+                </div>
+                
+                <div class="feedback" id="feedback1"></div>
+            </div>
+
+            <div class="card">
+                <h2>Question 2: Properties</h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    If a Poisson distribution has λ = 9, what is its variance?
+                </p>
+                
+                <div class="quiz-option" data-question="2" data-correct="false">
+                    3 (the square root of 9)
+                </div>
+                <div class="quiz-option" data-question="2" data-correct="true">
+                    9 (equal to the mean)
+                </div>
+                <div class="quiz-option" data-question="2" data-correct="false">
+                    81 (9 squared)
+                </div>
+                <div class="quiz-option" data-question="2" data-correct="false">
+                    18 (twice the mean)
+                </div>
+                
+                <div class="feedback" id="feedback2"></div>
+            </div>
+
+            <div class="card">
+                <h2>Question 3: Application</h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    A store receives 6 customers per hour on average. If you want to know the probability of receiving exactly 3 customers in the next 30 minutes, what should λ be?
+                </p>
+                
+                <div class="quiz-option" data-question="3" data-correct="false">
+                    6 (the hourly rate)
+                </div>
+                <div class="quiz-option" data-question="3" data-correct="true">
+                    3 (adjust for 30 minutes = 0.5 hours)
+                </div>
+                <div class="quiz-option" data-question="3" data-correct="false">
+                    12 (double the rate)
+                </div>
+                <div class="quiz-option" data-question="3" data-correct="false">
+                    2 (half of the desired events)
+                </div>
+                
+                <div class="feedback" id="feedback3"></div>
+            </div>
+
+            <div class="card">
+                <h2>Question 4: Shape Recognition</h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                    When will a Poisson distribution look most like a normal (bell-shaped) distribution?
+                </p>
+                
+                <div class="quiz-option" data-question="4" data-correct="false">
+                    When λ is very small (< 1)
+                </div>
+                <div class="quiz-option" data-question="4" data-correct="false">
+                    When λ is around 5
+                </div>
+                <div class="quiz-option" data-question="4" data-correct="true">
+                    When λ is large (> 10)
+                </div>
+                <div class="quiz-option" data-question="4" data-correct="false">
+                    Poisson distributions never look like normal distributions
+                </div>
+                
+                <div class="feedback" id="feedback4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+
+        // Poisson distribution calculation
+        function factorial(n) {
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) {
+                result *= i;
+            }
+            return result;
+        }
+
+        function poissonPMF(k, lambda) {
+            return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+        }
+
+        // Chart setup
+        const canvas = document.getElementById('distributionChart');
+        const ctx = canvas.getContext('2d');
+        const lambdaSlider = document.getElementById('lambdaSlider');
+        const lambdaValue = document.getElementById('lambdaValue');
+
+        function drawChart(lambda) {
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 60;
+            const maxK = Math.min(Math.ceil(lambda + 4 * Math.sqrt(lambda)), 30);
+            
+            // Calculate probabilities
+            const probabilities = [];
+            let maxProb = 0;
+            for (let k = 0; k <= maxK; k++) {
+                const prob = poissonPMF(k, lambda);
+                probabilities.push({ k, prob });
+                maxProb = Math.max(maxProb, prob);
+            }
+
+            // Clear canvas
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw axes
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+
+            // Draw bars
+            const barWidth = (width - 2 * padding) / (maxK + 1);
+            probabilities.forEach(({ k, prob }) => {
+                const barHeight = (prob / maxProb) * (height - 2 * padding) * 0.9;
+                const x = padding + k * barWidth;
+                const y = height - padding - barHeight;
+
+                // Gradient
+                const gradient = ctx.createLinearGradient(x, y, x, height - padding);
+                gradient.addColorStop(0, '#38bdf8');
+                gradient.addColorStop(1, '#0ea5e9');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x + barWidth * 0.1, y, barWidth * 0.8, barHeight);
+
+                // Value label
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(k, x + barWidth / 2, height - padding + 20);
+
+                // Probability label on hover
+                if (barHeight > 20) {
+                    ctx.fillStyle = '#f1f5f9';
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillText(prob.toFixed(3), x + barWidth / 2, y - 5);
+                }
+            });
+
+            // Labels
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Number of Events (k)', width / 2, height - 10);
+            
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Probability', 0, 0);
+            ctx.restore();
+
+            // Update stats
+            document.getElementById('meanValue').textContent = lambda.toFixed(2);
+            document.getElementById('varianceValue').textContent = lambda.toFixed(2);
+            document.getElementById('stdDevValue').textContent = Math.sqrt(lambda).toFixed(2);
+            document.getElementById('modeValue').textContent = Math.floor(lambda);
+        }
+
+        lambdaSlider.addEventListener('input', (e) => {
+            const lambda = parseFloat(e.target.value);
+            lambdaValue.textContent = lambda.toFixed(1);
+            drawChart(lambda);
+        });
+
+        // Initial draw
+        drawChart(3);
+
+        // Example cards
+        const exampleCards = document.querySelectorAll('.example-card');
+        exampleCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const lambda = parseFloat(card.dataset.lambda);
+                lambdaSlider.value = lambda;
+                lambdaValue.textContent = lambda.toFixed(1);
+                drawChart(lambda);
+                
+                // Switch to visual tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                document.querySelector('[data-tab="visual"]').classList.add('active');
+                document.getElementById('visual').classList.add('active');
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+
+        // Quiz functionality
+        const quizOptions = document.querySelectorAll('.quiz-option');
+        let answeredQuestions = new Set();
+
+        quizOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const question = option.dataset.question;
+                const isCorrect = option.dataset.correct === 'true';
+                const feedback = document.getElementById('feedback' + question);
+                
+                // Only allow one answer per question
+                if (answeredQuestions.has(question)) return;
+                answeredQuestions.add(question);
+
+                // Mark all options for this question
+                const allOptions = document.querySelectorAll(`[data-question="${question}"]`);
+                allOptions.forEach(opt => {
+                    opt.style.pointerEvents = 'none';
+                    if (opt.dataset.correct === 'true') {
+                        opt.classList.add('correct');
+                    } else if (opt === option) {
+                        opt.classList.add('incorrect');
+                    }
+                });
+
+                // Show feedback
+                feedback.classList.add('show');
+                if (isCorrect) {
+                    feedback.classList.add('correct');
+                    feedback.innerHTML = '<strong>✓ Correct!</strong> ' + getFeedbackText(question, true);
+                } else {
+                    feedback.classList.add('incorrect');
+                    feedback.innerHTML = '<strong>✗ Incorrect.</strong> ' + getFeedbackText(question, false);
+                }
+            });
+        });
+
+        function getFeedbackText(question, isCorrect) {
+            const feedbacks = {
+                '1': {
+                    correct: 'The Poisson distribution is perfect for modeling the count of events (cakes sold) over a fixed period (one day) when you know the average rate.',
+                    incorrect: 'Since we\'re counting discrete events (cakes) over a fixed time period with a known average, the Poisson distribution with λ = 4 is the best choice.'
+                },
+                '2': {
+                    correct: 'One of the unique properties of the Poisson distribution is that the mean and variance are always equal to λ!',
+                    incorrect: 'Remember: For the Poisson distribution, the variance always equals the mean, which equals λ. So if λ = 9, the variance is also 9.'
+                },
+                '3': {
+                    correct: 'Great! You need to adjust λ for the time period. Since 30 minutes is half an hour, λ = 6 × 0.5 = 3.',
+                    incorrect: 'You need to scale λ to match your time period. The rate is 6 per hour, so for 30 minutes (0.5 hours), λ = 6 × 0.5 = 3.'
+                },
+                '4': {
+                    correct: 'Excellent! As λ increases (especially above 10), the Poisson distribution becomes more symmetric and bell-shaped, resembling a normal distribution.',
+                    incorrect: 'When λ is large (greater than 10), the Poisson distribution becomes more symmetric and starts to look like a normal distribution. Small values of λ create right-skewed distributions.'
+                }
+            };
+            return feedbacks[question][isCorrect ? 'correct' : 'incorrect'];
+        }
+    </script>
+</body>
+</html>
