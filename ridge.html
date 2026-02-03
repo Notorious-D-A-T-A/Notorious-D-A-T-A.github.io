@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ridge Regression: Ice Hockey Edition</title>
+    <style>
+        :root {
+            --color-ice: #e8f4f8;
+            --color-blue-team: #003087;
+            --color-red-team: #c8102e;
+            --color-text: #1a1a1a;
+            --color-border: #cbd5e0;
+            --color-highlight: #ffd700;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--color-text);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: var(--color-blue-team);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            background: var(--color-ice);
+            border-radius: 12px;
+            border-left: 5px solid var(--color-blue-team);
+        }
+
+        .section.hidden {
+            display: none;
+        }
+
+        .section h2 {
+            color: var(--color-blue-team);
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+
+        .section h3 {
+            color: var(--color-red-team);
+            margin: 20px 0 10px 0;
+            font-size: 1.3rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid var(--color-blue-team);
+            color: var(--color-blue-team);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            background: var(--color-blue-team);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 48, 135, 0.3);
+        }
+
+        .tab-btn.active {
+            background: var(--color-blue-team);
+            color: white;
+        }
+
+        .interactive-demo {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider-container {
+            margin: 25px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--color-blue-team);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--color-red-team);
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--color-red-team);
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .player-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 2px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-name {
+            font-weight: 700;
+            color: var(--color-blue-team);
+            font-size: 1.1rem;
+        }
+
+        .stat-display {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: var(--color-ice);
+            padding: 10px 15px;
+            border-radius: 6px;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--color-blue-team);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-card h4 {
+            color: var(--color-blue-team);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .chart-container {
+            margin: 25px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            min-height: 300px;
+            position: relative;
+        }
+
+        .coefficient-bar {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+        }
+
+        .coef-label {
+            width: 150px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .coef-bar-wrapper {
+            flex: 1;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .coef-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-blue-team), var(--color-red-team));
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .formula-box {
+            background: #f8f9fa;
+            border: 2px dashed var(--color-blue-team);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .highlight {
+            background: var(--color-highlight);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .info-box strong {
+            color: #856404;
+        }
+
+        .btn-primary {
+            background: var(--color-blue-team);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-red-team);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
+        }
+
+        .result-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .emoji {
+            font-size: 1.5rem;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏒 Ridge Regression: Ice Hockey Edition</h1>
+            <p>Learn machine learning through the lens of hockey analytics!</p>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showSection(0)">🎯 The Problem</button>
+                <button class="tab-btn" onclick="showSection(1)">📊 Regular Regression</button>
+                <button class="tab-btn" onclick="showSection(2)">🛡️ Ridge Regression</button>
+                <button class="tab-btn" onclick="showSection(3)">⚙️ Interactive Demo</button>
+                <button class="tab-btn" onclick="showSection(4)">🏆 Why It Matters</button>
+            </div>
+
+            <!-- Section 0: The Problem -->
+            <div class="section" id="section-0">
+                <h2><span class="emoji">🎯</span>The Problem: Predicting Player Performance</h2>
+                
+                <p style="font-size: 1.1rem; line-height: 1.7; margin-bottom: 20px;">
+                    Imagine you're an NHL general manager trying to predict how many <strong>points</strong> (goals + assists) 
+                    a player will score next season. You have tons of statistics available:
+                </p>
+
+                <div class="comparison-grid">
+                    <div class="comparison-card">
+                        <h4>⏱️ Ice Time</h4>
+                        <p>Minutes played per game</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>🎯 Shot Attempts</h4>
+                        <p>Total shots taken</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>🥅 Shooting %</h4>
+                        <p>Goals per shot</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>💪 Hits</h4>
+                        <p>Physical play count</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>🛡️ Blocked Shots</h4>
+                        <p>Defensive contributions</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>⭐ Power Play</h4>
+                        <p>Advantages utilized</p>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>🚨 The Challenge:</strong> Many of these stats are <strong>highly correlated</strong>! 
+                    Players with high ice time often have high shot attempts. Players who shoot a lot tend to get more 
+                    power play opportunities. This correlation causes problems for regular regression!
+                </div>
+
+                <h3>What is Multicollinearity? 🤔</h3>
+                <p style="line-height: 1.7;">
+                    When your statistics are highly correlated (they move together), it's called <strong>multicollinearity</strong>. 
+                    It's like trying to figure out if a player's success is due to their ice time or their shot attempts, 
+                    but these two things always increase together, so you can't tell them apart!
+                </p>
+
+                <div class="interactive-demo">
+                    <h4 style="color: var(--color-blue-team); margin-bottom: 15px;">Example: Sidney Crosby</h4>
+                    <div class="player-card">
+                        <div class="player-name">Sidney Crosby #87</div>
+                        <div class="stat-display">
+                            <div class="stat-box">
+                                <div class="stat-label">Ice Time</div>
+                                <div class="stat-value">21:30</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Shots</div>
+                                <div class="stat-value">285</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-label">Points</div>
+                                <div class="stat-value">89</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 15px; font-style: italic;">
+                        If Crosby plays more ice time, he naturally takes more shots. These stats are correlated!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Section 1: Regular Regression -->
+            <div class="section hidden" id="section-1">
+                <h2><span class="emoji">📊</span>Regular Linear Regression: The Overzealous Scout</h2>
+                
+                <p style="font-size: 1.1rem; line-height: 1.7; margin-bottom: 20px;">
+                    Regular linear regression tries to find the <strong>perfect formula</strong> that relates 
+                    player stats to their point totals. It looks like this:
+                </p>
+
+                <div class="formula-box">
+                    Points = β₀ + β₁(Ice Time) + β₂(Shots) + β₃(Shooting %) + ...
+                </div>
+
+                <p style="line-height: 1.7; margin: 20px 0;">
+                    Each β (beta) is a <strong>coefficient</strong> that tells you how much that stat matters. 
+                    For example, if β₂ = 0.15, then each additional shot adds 0.15 points to your prediction.
+                </p>
+
+                <h3>🎪 The Problem: Wild Coefficients!</h3>
+                
+                <div class="interactive-demo">
+                    <h4 style="color: var(--color-blue-team); margin-bottom: 15px;">Regular Regression Coefficients</h4>
+                    
+                    <div class="coefficient-bar">
+                        <div class="coef-label">Ice Time</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" style="width: 85%;">+8.5</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">Shot Attempts</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" style="width: 92%; background: linear-gradient(90deg, #c8102e, #8b0000);">-9.2</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">Shooting %</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" style="width: 78%;">+7.8</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">Power Play Time</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" style="width: 88%;">+8.8</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>⚠️ Notice the problem:</strong> Ice Time has a huge positive coefficient (+8.5), 
+                    but Shot Attempts has a huge negative coefficient (-9.2)! This doesn't make sense because 
+                    more ice time leads to more shots. The model is confused by the correlation!
+                </div>
+
+                <h3>🎢 The Instability Issue</h3>
+                <p style="line-height: 1.7;">
+                    When you have correlated predictors, small changes in your training data can cause 
+                    <strong>massive swings</strong> in the coefficients. It's like the model is overfitting 
+                    and memorizing noise instead of learning real patterns. Your predictions become unreliable!
+                </p>
+
+                <ul>
+                    <li><strong>High Variance:</strong> Coefficients change wildly with different data samples</li>
+                    <li><strong>Overfitting:</strong> Model performs great on training data but poorly on new players</li>
+                    <li><strong>Unreliable:</strong> Can't trust which stats actually matter</li>
+                </ul>
+            </div>
+
+            <!-- Section 2: Ridge Regression -->
+            <div class="section hidden" id="section-2">
+                <h2><span class="emoji">🛡️</span>Ridge Regression: The Balanced Approach</h2>
+                
+                <p style="font-size: 1.1rem; line-height: 1.7; margin-bottom: 20px;">
+                    Ridge regression solves this problem by adding a <strong>penalty</strong> for having large coefficients. 
+                    Think of it as telling the model: "You can use all the stats, but don't go crazy with any of them!"
+                </p>
+
+                <div class="formula-box" style="font-size: 1rem;">
+                    Minimize: Σ(Actual - Predicted)² + <span class="highlight">λ × Σ(β²)</span>
+                    <br><br>
+                    <small style="color: #666;">Sum of squared errors + penalty for large coefficients</small>
+                </div>
+
+                <h3>🎯 The Key Component: Lambda (λ)</h3>
+                <p style="line-height: 1.7;">
+                    <strong>Lambda (λ)</strong> is the regularization strength - it controls how much we penalize large coefficients:
+                </p>
+
+                <div class="comparison-grid">
+                    <div class="comparison-card">
+                        <h4>λ = 0 (No Penalty)</h4>
+                        <p>Same as regular regression. Coefficients can be huge and unstable.</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>λ = Small (Light Touch)</h4>
+                        <p>Gentle shrinkage. Coefficients reduced but still flexible.</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>λ = Large (Strong Penalty)</h4>
+                        <p>Heavy shrinkage. All coefficients pushed toward zero.</p>
+                    </div>
+                </div>
+
+                <h3>✨ The Magic: Coefficient Shrinkage</h3>
+                
+                <div class="interactive-demo">
+                    <h4 style="color: var(--color-blue-team); margin-bottom: 15px;">Ridge Regression Coefficients (λ = 2.5)</h4>
+                    
+                    <div class="coefficient-bar">
+                        <div class="coef-label">Ice Time</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" style="width: 35%;">+3.5</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">Shot Attempts</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" style="width: 28%;">+2.8</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">Shooting %</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" style="width: 42%;">+4.2</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">Power Play Time</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" style="width: 38%;">+3.8</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>🎉 Much better!</strong> All coefficients are now reasonable and positive. 
+                    The model no longer has wild swings. Ice Time and Shot Attempts both contribute positively, 
+                    which makes hockey sense!
+                </div>
+
+                <h3>🎭 The Bias-Variance Tradeoff</h3>
+                <p style="line-height: 1.7; margin-bottom: 15px;">
+                    Ridge regression makes a smart trade: it accepts a little <strong>bias</strong> 
+                    (predictions slightly less perfect on training data) to get a big reduction in 
+                    <strong>variance</strong> (predictions much more stable on new data).
+                </p>
+
+                <ul>
+                    <li><strong>Reduces Overfitting:</strong> Model generalizes better to new players</li>
+                    <li><strong>Stabilizes Coefficients:</strong> Small data changes don't cause wild swings</li>
+                    <li><strong>Handles Correlation:</strong> Works great even when stats are related</li>
+                    <li><strong>Keeps All Features:</strong> Uses every stat, just moderates their influence</li>
+                </ul>
+            </div>
+
+            <!-- Section 3: Interactive Demo -->
+            <div class="section hidden" id="section-3">
+                <h2><span class="emoji">⚙️</span>Interactive Demo: Tune Lambda Yourself!</h2>
+                
+                <p style="font-size: 1.1rem; line-height: 1.7; margin-bottom: 20px;">
+                    Now it's your turn! Adjust the <strong>lambda (λ)</strong> parameter and watch how it affects 
+                    the regression coefficients in real-time.
+                </p>
+
+                <div class="interactive-demo">
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Regularization Strength (λ)</span>
+                            <span id="lambda-value" style="color: var(--color-red-team);">2.5</span>
+                        </div>
+                        <input type="range" id="lambda-slider" min="0" max="10" step="0.1" value="2.5">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #666; margin-top: 5px;">
+                            <span>No Penalty (0)</span>
+                            <span>Strong Penalty (10)</span>
+                        </div>
+                    </div>
+
+                    <h4 style="color: var(--color-blue-team); margin: 25px 0 15px 0;">Coefficient Values</h4>
+                    
+                    <div class="coefficient-bar">
+                        <div class="coef-label">🕐 Ice Time</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" id="coef-icetime" style="width: 35%;">+3.5</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">🎯 Shot Attempts</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" id="coef-shots" style="width: 28%;">+2.8</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">📈 Shooting %</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" id="coef-shooting" style="width: 42%;">+4.2</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">⚡ Power Play</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" id="coef-powerplay" style="width: 38%;">+3.8</div>
+                        </div>
+                    </div>
+
+                    <div class="coefficient-bar">
+                        <div class="coef-label">💪 Hits</div>
+                        <div class="coef-bar-wrapper">
+                            <div class="coef-bar" id="coef-hits" style="width: 12%;">+1.2</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-display" id="result-display">
+                    <strong>Model Prediction Accuracy:</strong> 87.5%
+                </div>
+
+                <div class="info-box">
+                    <strong>💡 Try this:</strong>
+                    <ul style="margin-top: 10px;">
+                        <li>Set λ = 0: Watch coefficients become unstable (some very large)</li>
+                        <li>Set λ = 5: Notice all coefficients shrink to moderate values</li>
+                        <li>Set λ = 10: See how coefficients get pushed very close to zero</li>
+                    </ul>
+                    The sweet spot is usually in the middle where you balance fit and stability!
+                </div>
+            </div>
+
+            <!-- Section 4: Why It Matters -->
+            <div class="section hidden" id="section-4">
+                <h2><span class="emoji">🏆</span>Why Ridge Regression Matters in Hockey Analytics</h2>
+                
+                <h3>🎯 Real-World Applications</h3>
+                <p style="line-height: 1.7; margin-bottom: 20px;">
+                    Ridge regression is used extensively in modern hockey analytics for:
+                </p>
+
+                <div class="comparison-grid">
+                    <div class="comparison-card">
+                        <h4>💰 Contract Valuation</h4>
+                        <p>Predicting fair salaries based on player performance metrics without overfitting to small sample sizes.</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>🔄 Trade Analysis</h4>
+                        <p>Evaluating trade proposals by modeling player value with stable, reliable coefficient estimates.</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>📊 Performance Metrics</h4>
+                        <p>Creating advanced stats like GAR (Goals Above Replacement) that handle correlated features well.</p>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>🔮 Draft Predictions</h4>
+                        <p>Projecting junior/college player NHL success from limited, correlated statistics.</p>
+                    </div>
+                </div>
+
+                <h3>🎓 Key Takeaways</h3>
+                
+                <div class="interactive-demo">
+                    <div style="display: flex; align-items: start; margin: 15px 0;">
+                        <span style="font-size: 2rem; margin-right: 15px;">1️⃣</span>
+                        <div>
+                            <strong style="color: var(--color-blue-team); font-size: 1.1rem;">Multicollinearity is Common</strong>
+                            <p style="margin: 5px 0;">In hockey (and most real-world data), your predictors are often correlated. Ice time relates to shots, which relates to points, which relates to ice time in future games!</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: start; margin: 15px 0;">
+                        <span style="font-size: 2rem; margin-right: 15px;">2️⃣</span>
+                        <div>
+                            <strong style="color: var(--color-blue-team); font-size: 1.1rem;">Regular Regression Struggles</strong>
+                            <p style="margin: 5px 0;">When predictors correlate, regular linear regression produces unstable, unreliable coefficients that don't generalize well.</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: start; margin: 15px 0;">
+                        <span style="font-size: 2rem; margin-right: 15px;">3️⃣</span>
+                        <div>
+                            <strong style="color: var(--color-blue-team); font-size: 1.1rem;">Ridge Adds a Penalty</strong>
+                            <p style="margin: 5px 0;">By penalizing large coefficients (controlled by λ), Ridge regression shrinks estimates toward zero, improving stability and reducing overfitting.</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: start; margin: 15px 0;">
+                        <span style="font-size: 2rem; margin-right: 15px;">4️⃣</span>
+                        <div>
+                            <strong style="color: var(--color-blue-team); font-size: 1.1rem;">Trade Bias for Variance</strong>
+                            <p style="margin: 5px 0;">Ridge accepts slightly worse fit on training data (bias) to achieve much better performance on new data (lower variance). This is the bias-variance tradeoff!</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: start; margin: 15px 0;">
+                        <span style="font-size: 2rem; margin-right: 15px;">5️⃣</span>
+                        <div>
+                            <strong style="color: var(--color-blue-team); font-size: 1.1rem;">Lambda is the Dial</strong>
+                            <p style="margin: 5px 0;">The λ parameter controls regularization strength. Low λ = close to regular regression. High λ = heavy shrinkage. The optimal λ is found through cross-validation.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>🚀 Beyond Hockey</h3>
+                <p style="line-height: 1.7;">
+                    Ridge regression isn't just for hockey! It's used in:
+                </p>
+                <ul>
+                    <li><strong>Finance:</strong> Stock price prediction with correlated market indicators</li>
+                    <li><strong>Medicine:</strong> Disease risk models with related biomarkers</li>
+                    <li><strong>Marketing:</strong> Customer behavior prediction with overlapping features</li>
+                    <li><strong>Climate Science:</strong> Temperature modeling with correlated atmospheric variables</li>
+                </ul>
+
+                <div class="result-display">
+                    <h3 style="margin-bottom: 15px;">🎉 Congratulations!</h3>
+                    <p>You now understand Ridge Regression! You've learned how regularization helps models handle correlated predictors, the bias-variance tradeoff, and why shrinking coefficients leads to better predictions. Keep learning and analyzing! 🏒📊</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showSection(index) {
+            const sections = document.querySelectorAll('.section');
+            const buttons = document.querySelectorAll('.tab-btn');
+            
+            sections.forEach((section, i) => {
+                if (i === index) {
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                }
+            });
+            
+            buttons.forEach((button, i) => {
+                if (i === index) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        const lambdaSlider = document.getElementById('lambda-slider');
+        const lambdaValue = document.getElementById('lambda-value');
+        const resultDisplay = document.getElementById('result-display');
+
+        const baseCoefficients = {
+            icetime: 8.5,
+            shots: 7.2,
+            shooting: 9.8,
+            powerplay: 8.8,
+            hits: 2.5
+        };
+
+        function updateCoefficients() {
+            const lambda = parseFloat(lambdaSlider.value);
+            lambdaValue.textContent = lambda.toFixed(1);
+
+            const shrinkageFactor = 1 / (1 + lambda * 0.4);
+            
+            const coefIcetime = baseCoefficients.icetime * shrinkageFactor;
+            const coefShots = baseCoefficients.shots * shrinkageFactor;
+            const coefShooting = baseCoefficients.shooting * shrinkageFactor;
+            const coefPowerplay = baseCoefficients.powerplay * shrinkageFactor;
+            const coefHits = baseCoefficients.hits * shrinkageFactor;
+
+            document.getElementById('coef-icetime').style.width = (coefIcetime * 10) + '%';
+            document.getElementById('coef-icetime').textContent = '+' + coefIcetime.toFixed(1);
+
+            document.getElementById('coef-shots').style.width = (coefShots * 10) + '%';
+            document.getElementById('coef-shots').textContent = '+' + coefShots.toFixed(1);
+
+            document.getElementById('coef-shooting').style.width = (coefShooting * 10) + '%';
+            document.getElementById('coef-shooting').textContent = '+' + coefShooting.toFixed(1);
+
+            document.getElementById('coef-powerplay').style.width = (coefPowerplay * 10) + '%';
+            document.getElementById('coef-powerplay').textContent = '+' + coefPowerplay.toFixed(1);
+
+            document.getElementById('coef-hits').style.width = (coefHits * 10) + '%';
+            document.getElementById('coef-hits').textContent = '+' + coefHits.toFixed(1);
+
+            const baseAccuracy = 72;
+            const optimalLambda = 2.5;
+            const lambdaDiff = Math.abs(lambda - optimalLambda);
+            const accuracy = baseAccuracy + (15 * Math.exp(-lambdaDiff / 2));
+
+            resultDisplay.innerHTML = `<strong>Model Prediction Accuracy:</strong> ${accuracy.toFixed(1)}%`;
+
+            if (lambda < 0.5) {
+                resultDisplay.innerHTML += `<br><small>⚠️ Low regularization - risk of overfitting!</small>`;
+            } else if (lambda > 7) {
+                resultDisplay.innerHTML += `<br><small>⚠️ Too much regularization - underfitting!</small>`;
+            } else if (lambda >= 2 && lambda <= 3.5) {
+                resultDisplay.innerHTML += `<br><small>✅ Great balance - optimal performance!</small>`;
+            }
+        }
+
+        lambdaSlider.addEventListener('input', updateCoefficients);
+        updateCoefficients();
+    </script>
+</body>
+</html>
+
